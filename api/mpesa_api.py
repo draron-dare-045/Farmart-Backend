@@ -27,7 +27,7 @@ def get_mpesa_access_token():
 
     try:
         token = response.json()['access_token']
-        cache.set('mpesa_access_token', token, timeout=3500) 
+        cache.set('mpesa_access_token', token, timeout=3500)
         return token
     except KeyError:
         print("Could not find 'access_token' in the response.")
