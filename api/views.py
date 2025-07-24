@@ -70,3 +70,42 @@ class OrderViewSet(viewsets.ModelViewSet):
         if self.request.user.user_type != User.Types.BUYER:
             raise permissions.PermissionDenied("Only Buyers can create orders.")
         serializer.save(buyer=self.request.user, status=Order.OrderStatus.CONFIRMED)
+
+class MakePaymentView(APIView):
+    """View to initiate an M-Pesa STK push."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        order_id = request.data.get('order_id')
+        phone_number = request.data.get('phone_number')
+
+        try:
+            order = Order.objects.get(id=order_id, buyer=request.user)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found or you are not the owner.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not phone_number:
+            return Response({'error': 'Phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        amount = sum(item.animal.price * item.quantity for item in order.items.all())
+
+        item_names = [item.animal.name for item in order.items.all()]
+        transaction_desc = ", ".join(item_names)
+        if len(transaction_desc) > 90:
+            transaction_desc = transaction_desc[:90] + "..."
+        
+ 
+        print(f"Generated Transaction Description: '{transaction_desc}'")
+        
+       
+        response_data = mpesa_api.initiate_stk_push(
+            phone_number=phone_number, 
+            amount=int(amount),
+            order_id=order_id,
+            transaction_desc=transaction_desc
+        )
+        
+        if 'errorCode' in response_data:
+             return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(response_data)
