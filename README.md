@@ -46,7 +46,7 @@ cd farmart_backend
 
 ### 3. Set Up Virtual Environment
 
-# Create virtual environment
+### Create virtual environment
 - ** python -m venv venv
 
 ### Activate it
@@ -65,15 +65,15 @@ cd farmart_backend
 
 - ** Create a .env file in the root directory with the following content:
 
-# SECURITY
+### SECURITY
 - ** DJANGO_SECRET_KEY='your-strong-secret-key-here'
 - ** DEBUG=True
 
-# HOSTS
+### HOSTS
 - ** ALLOWED_HOSTS=localhost,127.0.0.1
 - ** BACKEND_DOMAIN=http://127.0.0.1:8000
 
-# DATABASE
+### DATABASE
 - ** DB_NAME='farmart_db'
 - ** DB_USER='farmart_user'
 - ** DB_PASSWORD='your_db_password'
@@ -81,10 +81,10 @@ cd farmart_backend
 - ** DB_PORT='5432'
 - ** DATABASE_URL='postgres://farmart_user:your_db_password@localhost:5432/farmart_db'
 
-# CORS
+### CORS
 - ** CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
-# M-PESA
+### M-PESA
 MPESA_ENVIRONMENT=sandbox
 MPESA_CONSUMER_KEY=your_mpesa_consumer_key
 MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
