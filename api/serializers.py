@@ -52,3 +52,15 @@ class OrderReadSerializer(serializers.ModelSerializer):
 
     def get_total_price(self, order):
         return sum(item.animal.price * item.quantity for item in order.items.all())
+
+class OrderItemWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['animal', 'quantity']
+
+
+class OrderWriteSerializer(serializers.ModelSerializer):
+    items = OrderItemWriteSerializer(many=True)
+    class Meta:
+        model = Order
+        fields = ['id', 'items'] 
