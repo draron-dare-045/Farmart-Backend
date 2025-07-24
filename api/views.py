@@ -109,3 +109,39 @@ class MakePaymentView(APIView):
              return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(response_data)
+
+
+class MpesaCallbackView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        order_id = request.data.get('order_id')  
+        
+        try:
+            with transaction.atomic():
+                order = Order.objects.select_for_update().get(id=order_id)
+
+                if order.status == Order.OrderStatus.CONFIRMED:
+                    order.status = Order.OrderStatus.PAID
+                    order.save()
+                    for item in order.items.all():
+                        animal = item.animal
+                        animal_to_update = Animal.objects.select_for_update().get(id=animal.id)
+                        
+                        if animal_to_update.quantity >= item.quantity:
+                            animal_to_update.quantity -= item.quantity
+                            if animal_to_update.quantity == 0:
+                                animal_to_update.is_sold = True 
+                            animal_to_update.save()
+                        else:
+                            print(f"CRITICAL ERROR: Stock discrepancy for {animal.name} during payment processing.")
+                            
+                    
+                    print(f"Successfully processed payment and updated stock for Order ID: {order_id}")
+                else:
+                    print(f"Order ID: {order_id} was already processed or in an invalid state ({order.status}). Ignoring callback.")
+
+        except Order.DoesNotExist:
+            print(f"Error: Order with ID {order_id} not found.")
+        
+        return Response({'status': 'ok'})
