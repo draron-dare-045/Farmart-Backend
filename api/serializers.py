@@ -19,17 +19,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
     
-    class AnimalSerializer(serializers.ModelSerializer):
+class AnimalSerializer(serializers.ModelSerializer):
         farmer_username = serializers.CharField(source='farmer.username', read_only=True)
 
-    class Meta:
-        model = Animal
-        fields = [
-            'id', 'farmer', 'farmer_username', 'name', 'animal_type', 'breed',
-            'age', 'price', 'description', 'image', 
-            'is_sold', 'quantity', 'created_at', 'updated_at'
+        class Meta:
+            model = Animal
+            fields = [
+                'id', 'farmer', 'farmer_username', 'name', 'animal_type', 'breed',
+                 'age', 'price', 'description', 'image', 
+                'is_sold', 'quantity', 'created_at', 'updated_at'
         ]
         read_only_fields = ['farmer', 'is_sold']
+
 
 class OrderItemReadSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='animal.name', read_only=True)
