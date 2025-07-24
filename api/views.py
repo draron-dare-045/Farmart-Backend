@@ -25,9 +25,16 @@ class RegisterUserView(generics.CreateAPIView):
 
 
 class UserProfileView(APIView):
-    """View to get the profile of the currently logged-in user."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+    
+    class AnimalViewSet(viewsets.ModelViewSet):
+        queryset = Animal.objects.filter(is_sold=False).order_by('-created_at')
+        serializer_class = AnimalSerializer
+        permission_classes = [permissions.IsAuthenticated, IsFarmerOrReadOnly]
+
+    def perform_create(self, serializer): 
+        serializer.save(farmer=self.request.user)
