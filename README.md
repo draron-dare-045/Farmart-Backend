@@ -1,10 +1,10 @@
-# 🐄 Farmart Backend API
+# Farmart Backend API
 
 This repository contains the backend server for **Farmart**, a robust e-commerce platform connecting farmers directly with buyers. Built with Django and Django REST Framework, it provides a secure, scalable, and feature-rich API to power the Farmart frontend application.
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 - **User Authentication**: Secure user registration and login using JSON Web Tokens (JWT).
 - **Dual User Roles**: Distinct **BUYER** and **FARMER** roles with role-based permissions.
@@ -47,41 +47,42 @@ cd farmart_backend
 ### 3. Set Up Virtual Environment
 
 # Create virtual environment
-python -m venv venv
+- ** python -m venv venv
 
 # Activate it
+
 # On Mac/Linux:
-source venv/bin/activate
+- ** source venv/bin/activate
 
 # On Windows:
-.\venv\Scripts\activate
+- ** .\venv\Scripts\activate
 
 ### 4. Install Dependencies
 
-pip install -r requirements.txt
+- ** pip install -r requirements.txt
 
 ### 5. Configure Environment Variables
 
-Create a .env file in the root directory with the following content:
+- ** Create a .env file in the root directory with the following content:
 
 # SECURITY
-DJANGO_SECRET_KEY='your-strong-secret-key-here'
-DEBUG=True
+- ** DJANGO_SECRET_KEY='your-strong-secret-key-here'
+- ** DEBUG=True
 
 # HOSTS
-ALLOWED_HOSTS=localhost,127.0.0.1
-BACKEND_DOMAIN=http://127.0.0.1:8000
+- ** ALLOWED_HOSTS=localhost,127.0.0.1
+- ** BACKEND_DOMAIN=http://127.0.0.1:8000
 
 # DATABASE
-DB_NAME='farmart_db'
-DB_USER='farmart_user'
-DB_PASSWORD='your_db_password'
-DB_HOST='localhost'
-DB_PORT='5432'
-DATABASE_URL='postgres://farmart_user:your_db_password@localhost:5432/farmart_db'
+- ** DB_NAME='farmart_db'
+- ** DB_USER='farmart_user'
+- ** DB_PASSWORD='your_db_password'
+- ** DB_HOST='localhost'
+- ** DB_PORT='5432'
+- ** DATABASE_URL='postgres://farmart_user:your_db_password@localhost:5432/farmart_db'
 
 # CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+- ** CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
 # M-PESA
 MPESA_ENVIRONMENT=sandbox
@@ -149,179 +150,7 @@ Here you will find the test credentials, including the Shortcode (usually 174379
 
 After filling in all these values in your .env file and restarting your Django server, the M-Pesa STK push will work correctly.
 
-🌐 API Endpoints
-Here is a complete list of all API endpoints available in the application.
 
-Authentication
-Method
-
-Endpoint
-
-Description
-
-Auth Required?
-
-POST
-
-/api/register/
-
-Register a new Buyer or Farmer account.
-
-No
-
-POST
-
-/api/auth/jwt/create/
-
-Log in to get JWT access and refresh tokens.
-
-No
-
-POST
-
-/api/auth/jwt/refresh/
-
-Use a refresh token to get a new access token.
-
-Yes
-
-Users
-Method
-
-Endpoint
-
-Description
-
-Auth Required?
-
-GET
-
-/api/users/me/
-
-Get the profile of the logged-in user.
-
-Yes
-
-Animals (Products)
-Method
-
-Endpoint
-
-Description
-
-Auth Required?
-
-GET
-
-/api/animals/
-
-Get a list of all available animals.
-
-Yes
-
-POST
-
-/api/animals/
-
-Create a new animal listing.
-
-Yes (Farmer)
-
-GET
-
-/api/animals/<id>/
-
-Get details of a specific animal.
-
-Yes
-
-PUT
-
-/api/animals/<id>/
-
-Update an entire animal listing.
-
-Yes (Farmer)
-
-PATCH
-
-/api/animals/<id>/
-
-Partially update an animal listing.
-
-Yes (Farmer)
-
-DELETE
-
-/api/animals/<id>/
-
-Delete an animal listing.
-
-Yes (Farmer)
-
-Orders
-Method
-
-Endpoint
-
-Description
-
-Auth Required?
-
-POST
-
-/api/orders/
-
-Create a new order with items.
-
-Yes (Buyer)
-
-GET
-
-/api/orders/
-
-Get a list of your orders.
-
-Yes
-
-GET
-
-/api/orders/<id>/
-
-Get details of a specific order.
-
-Yes (Owner)
-
-PATCH
-
-/api/orders/<id>/
-
-Update an order's status (e.g., confirm).
-
-Yes (Farmer)
-
-Payments
-Method
-
-Endpoint
-
-Description
-
-Auth Required?
-
-POST
-
-/api/make-payment/
-
-Initiate an M-Pesa STK push for an order.
-
-Yes (Buyer)
-
-POST
-
-/api/mpesa-callback/
-
-Public URL for
 
 
 
