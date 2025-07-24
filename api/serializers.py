@@ -51,5 +51,4 @@ class OrderReadSerializer(serializers.ModelSerializer):
         fields = ['id', 'buyer_username', 'status', 'created_at', 'items', 'total_price']
 
     def get_total_price(self, order):
-        """Calculate the total price of all items in the order."""
         return sum(item.animal.price * item.quantity for item in order.items.all())
