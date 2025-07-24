@@ -49,12 +49,12 @@ cd farmart_backend
 # Create virtual environment
 - ** python -m venv venv
 
-# Activate it
+### Activate it
 
-# On Mac/Linux:
+### On Mac/Linux:
 - ** source venv/bin/activate
 
-# On Windows:
+### On Windows:
 - ** .\venv\Scripts\activate
 
 ### 4. Install Dependencies
