@@ -32,3 +32,48 @@ def get_mpesa_access_token():
     except KeyError:
         print("Could not find 'access_token' in the response.")
         return None
+    
+def initiate_stk_push(phone_number, amount, order_id, transaction_desc):
+    access_token = get_mpesa_access_token()
+    if not access_token:
+        return {'error': 'Could not obtain access token.'}
+
+    if settings.MPESA_ENVIRONMENT == 'production':
+        process_request_url = 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
+    else:
+        process_request_url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
+
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    password = base64.b64encode((settings.MPESA_SHORTCODE + settings.MPESA_PASSKEY + timestamp).encode()).decode()
+
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+
+    payload = {
+        'BusinessShortCode': settings.MPESA_SHORTCODE,
+        'Password': password,
+        'Timestamp': timestamp,
+        'TransactionType': settings.MPESA_TRANSACTION_TYPE,
+        'Amount': str(amount),
+        'PartyA': phone_number,
+        'PartyB': settings.MPESA_SHORTCODE,
+        'PhoneNumber': phone_number,
+        'CallBackURL': settings.MPESA_CALLBACK_URL,
+        'AccountReference': str(order_id),  
+        'TransactionDesc': transaction_desc 
+    }
+
+    print("--- SENDING PAYLOAD TO M-PESA ---")
+    print(payload)
+    print("---------------------------------")
+
+    try:
+        response = requests.post(process_request_url, json=payload, headers=headers, timeout=15)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"M-Pesa request failed. Status Code: {e.response.status_code if e.response else 'N/A'}")
+        print(f"Response Body: {e.response.text if e.response else 'No response body'}")
+        return {'error': 'Request to M-Pesa failed.', 'details': str(e)}
