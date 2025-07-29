@@ -17,6 +17,11 @@ from . import mpesa_api
 
 User = get_user_model()
 
+@swagger_auto_schema(
+    operation_description="Register a new user (Buyer or Farmer)",
+    responses={201: UserRegistrationSerializer()},
+)
+
 
 class RegisterUserView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -26,6 +31,11 @@ class RegisterUserView(generics.CreateAPIView):
 
 class UserProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Get the profile of the currently logged-in user.",
+        responses={200: UserSerializer()}
+    )
 
     def get(self, request):
         serializer = UserSerializer(request.user)
@@ -74,6 +84,18 @@ class OrderViewSet(viewsets.ModelViewSet):
 class MakePaymentView(APIView):
     """View to initiate an M-Pesa STK push."""
     permission_classes = [permissions.IsAuthenticated]
+    @swagger_auto_schema(
+        operation_description="Initiate M-Pesa STK Push for a specific order.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['order_id', 'phone_number'],
+            properties={
+                'order_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Order ID'),
+                'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='Phone number in format 2547XXXXXXXX'),
+            },
+        ),
+        responses={200: openapi.Response("STK push initiated")}
+    )
 
     def post(self, request, *args, **kwargs):
         order_id = request.data.get('order_id')
@@ -113,6 +135,17 @@ class MakePaymentView(APIView):
 
 class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
+    @swagger_auto_schema(
+        operation_description="M-Pesa callback URL to update payment status.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['order_id'],
+            properties={
+                'order_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Order ID from original payment'),
+            }
+        ),
+        responses={200: openapi.Response(description="Callback processed")}
+    )
 
     def post(self, request, *args, **kwargs):
         order_id = request.data.get('order_id')  

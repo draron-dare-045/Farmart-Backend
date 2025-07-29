@@ -28,6 +28,7 @@ INSTALLED_APPS = [
 
 
     'api',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -68,7 +69,7 @@ DATABASES = {
         default=config('DATABASE_URL')
     )
 }
-el
+
 AUTH_USER_MODEL = 'api.User'
 
 
