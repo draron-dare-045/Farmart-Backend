@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'djoser',
-
+    'drf_yasg'
 
     'api',
     'drf_yasg',
