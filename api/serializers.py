@@ -21,6 +21,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class AnimalSerializer(serializers.ModelSerializer):
         farmer_username = serializers.CharField(source='farmer.username', read_only=True)
+        image = serializers.ImageField(required=False, use_url=True)
 
     class Meta:
         model = Animal
@@ -31,8 +32,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['farmer', 'is_sold']
 
-class OrderItemReadSerializer(serializers.ModelSerializer):
-    """Serializer for displaying items within an order."""
+        def to_representation(self, instance):
+       
+            if instance.image and hasattr(instance.image, 'url'):
+                    representation['image'] = instance.image.url
+            else:
+                representation['image'] = None
+            return representation
+
+class OrderItemReadSerializer(serializers.ModelSerializer): 
     name = serializers.CharField(source='animal.name', read_only=True)
     price = serializers.DecimalField(source='animal.price', max_digits=10, decimal_places=2, read_only=True)
 
@@ -69,21 +77,19 @@ class OrderWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
+        buyer = self.context['request'].user
         order = Order.objects.create(**validated_data)
 
         for item_data in items_data:
-            animal = item_data['animal']
-            quantity_ordered = item_data['quantity']
-
-            if animal.is_sold or animal.quantity == 0:
-                raise serializers.ValidationError(f"'{animal.name}' is out of stock.")
-            
-            if quantity_ordered > animal.quantity:
-                raise serializers.ValidationError(
-                    f"Not enough stock for '{animal.name}'. "
-                    f"You requested {quantity_ordered}, but only {animal.quantity} are available."
-                )
-            
             OrderItem.objects.create(order=order, **item_data)
 
         return order
+    
+class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+   
+    class Meta:
+        model = Order
+        fields = ['status']
+           
+
+  
