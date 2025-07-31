@@ -37,18 +37,13 @@ class IsOrderFarmerOrBuyerOrAdmin(permissions.BasePermission):
     message = "You do not have permission to perform this action on this order."
  
     def has_object_permission(self, request, view, obj):
-        # Admin users can always do everything.
         if request.user.is_staff:
             return True
         
-        # The user who bought the order can always access it.
         if obj.buyer == request.user:
             return True
         
-        # If the logged-in user is a farmer, we check if any item in the
-        # order belongs to them. The .exists() check is very efficient.
         if request.user.user_type == 'FARMER':
             return obj.items.filter(animal__farmer=request.user).exists()
 
-        # For any other case, deny permission.
         return False
