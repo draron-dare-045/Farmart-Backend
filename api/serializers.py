@@ -93,3 +93,15 @@ class OrderWriteSerializer(serializers.ModelSerializer):
             
         # The stock reduction logic will now be handled in the view after this.
         return order
+    
+
+
+# === THIS IS THE NEW SERIALIZER YOU NEED TO ADD ===
+# It is essential for allowing farmers to update the order status.
+class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+    """
+    A dedicated serializer specifically for updating only the status of an Order.
+    """
+    class Meta:
+        model = Order
+        fields = ['status']
