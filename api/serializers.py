@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from .models import User, Animal, Order, OrderItem
 
-# === User and Registration Serializers ===
-# These are correct and do not need changes.
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -17,8 +15,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
     
-    # === Animal Serializer ===
-# This version correctly handles both file uploads and generating the full URL for reading.
 class AnimalSerializer(serializers.ModelSerializer):
     """Serializer for the Animal model that handles file uploads and URL generation."""
     farmer_username = serializers.CharField(source='farmer.username', read_only=True)
@@ -42,8 +38,6 @@ class AnimalSerializer(serializers.ModelSerializer):
             representation['image'] = None
         return representation
     
-    # === Order and OrderItem Serializers ===
-# These are the main serializers for reading and creating orders.
 class OrderItemReadSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='animal.name', read_only=True)
     price = serializers.DecimalField(source='animal.price', max_digits=10, decimal_places=2, read_only=True)
@@ -71,33 +65,22 @@ class OrderWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'items'] # The 'id' will be read-only on response
+        fields = ['id', 'items'] 
 
     def create(self, validated_data):
         """
         This method correctly handles the creation of an Order and its nested OrderItems.
         """
-        # Get the nested items data from the validated data
+
         items_data = validated_data.pop('items')
         
-        # The 'buyer' is not in validated_data, it must be passed from the view.
-        # We get it from the 'context' which the view provides.
         buyer = self.context['request'].user
-        
-        # Create the main Order object
         order = Order.objects.create(buyer=buyer, **validated_data)
-        
-        # Loop through the items data to create the OrderItem objects
         for item_data in items_data:
             OrderItem.objects.create(order=order, **item_data)
             
-        # The stock reduction logic will now be handled in the view after this.
         return order
     
-
-
-# === THIS IS THE NEW SERIALIZER YOU NEED TO ADD ===
-# It is essential for allowing farmers to update the order status.
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
     """
     A dedicated serializer specifically for updating only the status of an Order.
