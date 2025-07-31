@@ -18,7 +18,8 @@ from .serializers import (
     AnimalSerializer,
     OrderReadSerializer,
     OrderWriteSerializer,
-    OrderStatusUpdateSerializer,  
+    OrderStatusUpdateSerializer,  # Crucial import
+    UserSerializer,
     UserRegistrationSerializer
 )
 from .permissions import IsFarmerOrReadOnly, IsOrderFarmerOrBuyerOrAdmin
@@ -38,7 +39,6 @@ class UserProfileView(APIView):
         return Response(serializer.data)
 
 
-
 class AnimalViewSet(viewsets.ModelViewSet):
     queryset = Animal.objects.filter(is_sold=False, quantity__gt=0).order_by('-created_at')
     serializer_class = AnimalSerializer
@@ -50,11 +50,11 @@ class AnimalViewSet(viewsets.ModelViewSet):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-  
+    """ViewSet for managing Orders."""
     permission_classes = [permissions.IsAuthenticated, IsOrderFarmerOrBuyerOrAdmin]
 
     def get_serializer_class(self):
-     
+        
         if self.action == 'create':
             return OrderWriteSerializer
         if self.action in ['update', 'partial_update']:
@@ -62,7 +62,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         return OrderReadSerializer
 
     def get_queryset(self):
-       
+        
         user = self.request.user
         queryset = Order.objects.select_related('buyer').prefetch_related('items__animal').all()
         if user.is_staff:
@@ -73,13 +73,12 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     
     def perform_create(self, serializer):
-        """Set the buyer and reduce stock in a safe transaction."""
+
         if self.request.user.user_type != User.Types.BUYER:
             raise permissions.PermissionDenied("Only Buyers can create orders.")
         try:
             with transaction.atomic():
                 order = serializer.save()
-
                 for item in order.items.all():
                     animal_to_update = Animal.objects.select_for_update().get(id=item.animal.id)
                     if animal_to_update.quantity < item.quantity:
@@ -93,7 +92,6 @@ class OrderViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError("Could not create order due to a stock issue or server error.")
 
 class MakePaymentView(APIView):
- 
     permission_classes = [permissions.IsAuthenticated]
 
     @swagger_auto_schema(
@@ -141,14 +139,13 @@ class MakePaymentView(APIView):
 
         return Response(response_data)
 
-
-
 class MpesaCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
     @swagger_auto_schema(
-        
+       
     )
     def post(self, request, *args, **kwargs):
+       
         order_id = request.data.get('order_id')
 
         try:
@@ -161,6 +158,7 @@ class MpesaCallbackView(APIView):
                 else:
                     print(f"Ignoring callback for Order ID: {order_id}, status is already '{order.status}'.")
 
+               
         except Order.DoesNotExist:
             print(f"Error: Order with ID {order_id} not found during callback.")
 
@@ -176,11 +174,8 @@ class FarmerProfessionalDashboardView(APIView):
             return Response({'error': 'Only farmers can access this dashboard.'}, status=status.HTTP_403_FORBIDDEN)
 
         farmer = request.user
-        
         SALES_STATUSES = [Order.OrderStatus.PAID, Order.OrderStatus.CONFIRMED]
-
         sales_items = OrderItem.objects.filter(animal__farmer=farmer, order__status__in=SALES_STATUSES)
-        
         total_revenue = sales_items.aggregate(total=Sum(F('quantity') * F('animal__price')))['total'] or 0
         total_sales_count = Order.objects.filter(items__animal__farmer=farmer, status__in=SALES_STATUSES).distinct().count()
         active_listings_count = Animal.objects.filter(farmer=farmer, is_sold=False, quantity__gt=0).count()

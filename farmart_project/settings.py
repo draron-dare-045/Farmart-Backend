@@ -25,6 +25,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'djoser',
+    'cloudinary',
+    'cloudinary_storage',
     'drf_yasg'
 
     'api',
