@@ -1,0 +1,243 @@
+"""
+Base test utilities and shared fixtures for FarmArt API tests
+"""
+from decimal import Decimal
+from django.contrib.auth import get_user_model
+from rest_framework.test import APITestCase, APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
+from api.models import User, Animal, Order, OrderItem
+
+User = get_user_model()
+
+
+class BaseAPITestCase(APITestCase):
+    """Base test case with common setup and utilities"""
+    
+    def setUp(self):
+        """Set up test data"""
+        # Create test users
+        self.farmer = User.objects.create_user(
+            username='farmer1',
+            email='farmer@test.com',
+            password='testpass123',
+            user_type=User.Types.FARMER,
+            phone_number='+254712345678',
+            location='Nairobi'
+        )
+        
+        self.buyer = User.objects.create_user(
+            username='buyer1', 
+            email='buyer@test.com',
+            password='testpass123',
+            user_type=User.Types.BUYER,
+            phone_number='+254787654321',
+            location='Mombasa'
+        )
+        
+        self.admin = User.objects.create_superuser(
+            username='admin',
+            email='admin@test.com', 
+            password='adminpass123',
+            user_type=User.Types.FARMER,
+            phone_number='+254700000000',
+            location='Kisumu'
+        )
+        
+        # Create test animals
+        self.animal1 = Animal.objects.create(
+            farmer=self.farmer,
+            name='Bessie',
+            animal_type=Animal.AnimalTypes.COW,
+            breed='Holstein',
+            age=24,
+            price=Decimal('50000.00'),
+            description='High quality dairy cow',
+            quantity=1
+        )
+        
+        self.animal2 = Animal.objects.create(
+            farmer=self.farmer,
+            name='Goaty',
+            animal_type=Animal.AnimalTypes.GOAT,
+            breed='Boer',
+            age=12,
+            price=Decimal('15000.00'),
+            description='Healthy meat goat',
+            quantity=5
+        )
+
+    def get_token(self, user):
+        """Get JWT token for user authentication"""
+        refresh = RefreshToken.for_user(user)
+        return str(refresh.access_token)
+
+    def authenticate(self, user):
+        """Authenticate client with user token"""
+        token = self.get_token(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+    def create_order(self, buyer=None, animal=None, quantity=1, status=Order.OrderStatus.PENDING):
+        """Helper method to create orders for testing"""
+        if buyer is None:
+            buyer = self.buyer
+        if animal is None:
+            animal = self.animal1
+            
+        order = Order.objects.create(buyer=buyer, status=status)
+        order_item = OrderItem.objects.create(
+            order=order,
+            animal=animal,
+            quantity=quantity
+        )
+        return order, order_item
+
+    def create_animal(self, farmer=None, **kwargs):
+        """Helper method to create animals for testing"""
+        if farmer is None:
+            farmer = self.farmer
+            
+        defaults = {
+            'name': 'Test Animal',
+            'animal_type': Animal.AnimalTypes.COW,
+            'breed': 'Test Breed',
+            'age': 24,
+            'price': Decimal('30000.00'),
+            'description': 'Test animal description',
+            'quantity': 1
+        }
+        defaults.update(kwargs)
+        
+        return Animal.objects.create(farmer=farmer, **defaults)
+
+    def create_user(self, user_type=User.Types.BUYER, **kwargs):
+        """Helper method to create users for testing"""
+        defaults = {
+            'username': f'testuser_{User.objects.count()}',
+            'email': f'test{User.objects.count()}@example.com',
+            'password': 'testpass123',
+            'phone_number': f'+25470000000{User.objects.count()}',
+            'location': 'Test Location'
+        }
+        defaults.update(kwargs)
+        defaults['user_type'] = user_type
+        
+        return User.objects.create_user(**defaults)
+
+
+class TestDataMixin:
+    """Mixin with common test data"""
+    
+    @classmethod
+    def get_valid_user_data(cls, user_type=User.Types.BUYER):
+        """Get valid user registration data"""
+        return {
+            'username': f'newuser_{User.objects.count()}',
+            'email': f'newuser{User.objects.count()}@test.com',
+            'password': 'newpass123',
+            'user_type': user_type,
+            'phone_number': f'+25471111111{User.objects.count()}',
+            'location': 'Test City'
+        }
+    
+    @classmethod
+    def get_valid_animal_data(cls):
+        """Get valid animal creation data"""
+        return {
+            'name': 'Test Animal',
+            'animal_type': Animal.AnimalTypes.COW,
+            'breed': 'Holstein',
+            'age': 24,
+            'price': '50000.00',
+            'description': 'High quality test animal',
+            'quantity': 1
+        }
+    
+    @classmethod
+    def get_valid_order_data(cls, animal_id):
+        """Get valid order creation data"""
+        return {
+            'items': [
+                {
+                    'animal': animal_id,
+                    'quantity': 1
+                }
+            ]
+        }
+    
+    @classmethod
+    def get_valid_payment_data(cls, order_id):
+        """Get valid payment data"""
+        return {
+            'order_id': order_id,
+            'phone_number': '254712345678'
+        }
+
+
+class MockMpesaResponseMixin:
+    """Mixin with mock M-Pesa responses"""
+    
+    @staticmethod
+    def get_successful_stk_response():
+        """Mock successful STK push response"""
+        return {
+            'MerchantRequestID': '29115-34620561-1',
+            'CheckoutRequestID': 'ws_CO_191220191020363925',
+            'ResponseCode': '0',
+            'ResponseDescription': 'Success. Request accepted for processing',
+            'CustomerMessage': 'Success. Request accepted for processing'
+        }
+    
+    @staticmethod
+    def get_failed_stk_response():
+        """Mock failed STK push response"""
+        return {
+            'errorCode': '400.002.02',
+            'errorMessage': 'Bad Request - Invalid Amount'
+        }
+    
+    @staticmethod
+    def get_successful_callback_data(order_id):
+        """Mock successful callback data"""
+        return {
+            'order_id': order_id,
+            'Body': {
+                'stkCallback': {
+                    'MerchantRequestID': '29115-34620561-1',
+                    'CheckoutRequestID': 'ws_CO_191220191020363925',
+                    'ResultCode': 0,
+                    'ResultDesc': 'The service request is processed successfully.'
+                }
+            }
+        }
+    
+    @staticmethod
+    def get_failed_callback_data(order_id):
+        """Mock failed callback data"""
+        return {
+            'order_id': order_id,
+            'Body': {
+                'stkCallback': {
+                    'MerchantRequestID': '29115-34620561-1',
+                    'CheckoutRequestID': 'ws_CO_191220191020363925',
+                    'ResultCode': 1032,
+                    'ResultDesc': 'Request cancelled by user'
+                }
+            }
+        }
+
+
+# Constants for testing
+TEST_PHONE_NUMBERS = {
+    'VALID': ['+254712345678', '254712345678', '0712345678'],
+    'INVALID': ['712345678', '+254712', 'abcd712345678', '', '+1234567890123456789']
+}
+
+TEST_PRICES = {
+    'VALID': ['1000.00', '50000.50', '999999.99'],
+    'INVALID': ['-1000.00', 'abc', '']
+}
+
+TEST_QUANTITIES = {
+    'VALID': [1, 5, 100],
+    'INVALID': [-1, 0, 'abc']
+}
