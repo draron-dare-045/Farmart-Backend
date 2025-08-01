@@ -25,9 +25,12 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'djoser',
+    'cloudinary',
+    'cloudinary_storage',
     'drf_yasg'
 
     'api',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -68,7 +71,7 @@ DATABASES = {
         default=config('DATABASE_URL')
     )
 }
-el
+
 AUTH_USER_MODEL = 'api.User'
 
 
